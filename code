@@ -1,0 +1,99 @@
+#!/usr/bin/python
+
+import datetime
+
+import tweepy
+import time
+import sys
+
+from bs4 import BeautifulSoup
+import urllib2
+
+
+
+yesterday = datetime.datetime.now() - datetime.timedelta(days = 1)
+dd = yesterday.strftime("%d")
+mm = yesterday.strftime("%m")
+yy = yesterday.strftime("20%y")
+
+url = 'https://www.basketball-reference.com/friv/dailyleaders.fcgi?month=' + mm + '&day=' + dd +'&year=' + yy + '&type=all'
+
+print url
+
+while int(dd) >= 1:
+    argfile = str(sys.argv[0])
+
+    page = urllib2.urlopen(url)
+    soup = BeautifulSoup(page, "lxml")
+    right_table = soup.find('table', class_ = 'sortable stats_table')
+
+    A=[]
+    B=[]
+    C=[]
+    D=[]
+    E=[]
+    F=[]
+    G=[]
+    H=[]
+    I=[]
+    J=[]
+    K=[]
+    L=[]
+    M=[]
+
+    for row in right_table.findAll("tr"):
+        cells = row.findAll('td')
+        if len(cells) == 25:
+            A.append(cells[0].find(text=True))
+            B.append(cells[23].find(text=True))
+            C.append(cells[17].find(text=True))
+            D.append(cells[18].find(text=True))
+            E.append(cells[19].find(text=True))
+            F.append(cells[20].find(text=True))
+            G.append(cells[1].find(text=True))
+            H.append(cells[7].find(text=True))
+            I.append(cells[13].find(text=True))
+            J.append(cells[21].find(text=True))
+            K.append(cells[5].find(text=True))
+            L.append(cells[4].find('a').get('href'))
+            M.append(cells[22].find(text=True))
+
+    import pandas as pd
+
+    df=pd.DataFrame(A, columns=['Name'])
+    df['PTS'] = B
+    df['REB'] = C
+    df['AST'] = D
+    df['STL'] = E
+    df['BLK'] = F
+    df['Tm'] = G
+    df['FGA'] = H
+    df['FTA'] = I
+    df['TO'] = J
+    df['MP'] = K
+    df['Link'] = L
+    df['PF'] = M
+
+    df[['PTS', 'REB', 'AST', 'STL', 'BLK', 'FGA', 'FTA', 'TO', 'PF']] = df[['PTS', 'REB', 'AST', 'STL', 'BLK', 'FGA', 'FTA', 'TO', 'PF']].apply(pd.to_numeric)
+
+    href = 'http://www.basketball-reference.com'
+    dd = int(dd) - 1
+
+    df = df[df.PTS == 0]
+    df = df[df.REB == 0]
+    df = df[df.AST == 0]
+    df = df[df.STL == 0]
+    df = df[df.BLK == 0]
+    df = df[df.FGA == 0]
+    df = df[df.FTA == 0]
+    df = df[df.TO == 0]
+    df = df[df.PF == 0]
+    print df
+    dd = int(dd) - 1
+
+print('bye!')
+
+
+#print(yesterday.strftime('%m/%d/%y') + ': The best game score of the day belonged to %s. He had %s points, %s rebounds, and %s assists in %s, with a TS%% of %s%%. %s' %(df['Name'].iloc[0], df['PTS'].iloc[0], df['REB'].iloc[0], df['AST'].iloc[0], df['MP'].iloc[0], round(100*(df['PTS'].iloc[0]/(2*df['FGA'].iloc[0] + .44*df['FTA'].iloc[0])),2), href + df['Link'].iloc[0]))
+#print(yesterday.strftime('%m/%d/%y') + ': The second best game score of the day belonged to %s. He had %s points, %s rebounds, and %s assists in %s, with a TS%% of %s%%. %s' %(df['Name'].iloc[1], df['PTS'].iloc[1], df['REB'].iloc[1], df['AST'].iloc[1], df['MP'].iloc[1], round(100*(df['PTS'].iloc[1]/(2*df['FGA'].iloc[1] + .44*df['FTA'].iloc[1])),2), href + df['Link'].iloc[1]))
+#print(yesterday.strftime('%m/%d/%y') + ': The worst game score of the day belonged to %s. He had %s points, %s rebounds, and %s assists in %s, with a TS%% of %s%%. %s' %(df['Name'].iloc[-1], df['PTS'].iloc[-1], df['REB'].iloc[-1], df['AST'].iloc[-1], df['MP'].iloc[-1], round(100*(df['PTS'].iloc[-1]/(2*df['FGA'].iloc[-1] + .44*df['FTA'].iloc[-1])),2), href + df['Link'].iloc[-1]))
